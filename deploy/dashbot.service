@@ -1,0 +1,17 @@
+[Unit]
+Description=NCI Discord bot (dashbot)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adjust these two paths to wherever you cloned the repo and created the venv.
+WorkingDirectory=/opt/dashbot
+ExecStart=/opt/dashbot/.venv/bin/python -m dashbot
+EnvironmentFile=/opt/dashbot/.env
+Restart=on-failure
+RestartSec=5
+User=dashbot
+
+[Install]
+WantedBy=multi-user.target

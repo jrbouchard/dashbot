@@ -74,6 +74,55 @@ Run it:
 python -m dashbot
 ```
 
+## Self-hosting (recommended: no cloud bill)
+
+The bot holds an always-on connection to Discord and polls Dash on a timer,
+so it needs to run continuously somewhere — but that "somewhere" can just be
+a machine you already control (the same box running Jellyfin/Plex/etc. is
+fine) instead of a paid cloud service.
+
+### Option A: Docker Compose
+
+Simplest if you're already running other self-hosted services this way.
+
+```bash
+cp .env.example .env   # fill it in first
+docker compose up -d --build
+```
+
+- State (the SQLite file) lands in `./data/dashbot.db` on the host via the
+  volume mount in `docker-compose.yml`, so it survives container
+  rebuilds/restarts — back that file up if you want survey/reminder history
+  preserved across a full re-provision.
+- `restart: unless-stopped` brings it back after a host reboot or crash.
+- To update after pulling new code: `docker compose up -d --build` again.
+- Logs: `docker compose logs -f dashbot`.
+
+### Option B: systemd (bare metal, no Docker)
+
+```bash
+sudo useradd --system --home /opt/dashbot dashbot
+sudo git clone <this repo> /opt/dashbot
+cd /opt/dashbot
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env   # fill it in
+sudo chown -R dashbot:dashbot /opt/dashbot
+
+sudo cp deploy/dashbot.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now dashbot
+```
+
+- `deploy/dashbot.service` assumes `/opt/dashbot` — edit the paths in that
+  file first if you put the repo somewhere else.
+- Restarts automatically on failure and on boot (`enable`).
+- Logs: `journalctl -u dashbot -f`.
+- To update: `git pull`, `.venv/bin/pip install -r requirements.txt` (if
+  deps changed), `sudo systemctl restart dashbot`.
+
+Either way, `.env` and `*.db` never need to leave the host — nothing about
+this bot requires a third-party server, cloud account, or recurring fee.
+
 ## Slash commands
 
 - `/schedule [team]` — upcoming games.

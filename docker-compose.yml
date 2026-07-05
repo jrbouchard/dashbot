@@ -1,0 +1,12 @@
+services:
+  dashbot:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Overrides whatever DATABASE_URL is in .env so the sqlite file lands
+      # on the mounted volume below instead of inside the ephemeral container.
+      DATABASE_URL: sqlite:////data/dashbot.db
+    volumes:
+      - ./data:/data
